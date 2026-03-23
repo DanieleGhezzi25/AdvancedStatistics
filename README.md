@@ -1,2 +1,2 @@
 # Advanced Statistics for Physics Analysis
-## Physics of Data - UniPd
+Exercise of Advanced Statistics for Physics Analysis couse - Physics of Data (Unipd) 
