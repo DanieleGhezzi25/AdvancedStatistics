@@ -9,15 +9,18 @@ colnames(data) <- c("data")
 # Since as prior we have a Gamma distribution, the posterior distribution will also be a Gamma distribution.
 # The parameters of the posterior distribution can be calculated as follows:
 
-alpha_post <- 2 + sum(data$data)
-beta_post <- 1 + nrow(data)
-mean <- alpha_post / beta_post # mean of the posterior distribution
-var <- alpha_post / (beta_post^2) # variance of the posterior distribution
+alpha_prior <- 0.001
+beta_prior <- 0.001
+
+alpha_post <- alpha_prior + sum(data$data)
+beta_post <- beta_prior + nrow(data)
+post_mean <- alpha_post / beta_post # mean of the posterior distribution
+post_var <- alpha_post / (beta_post^2) # variance of the posterior distribution
 
 
 cat("The posterior distribution is Gamma with alpha =", alpha_post, "and beta =", beta_post, "\n")
-cat("The mean of the posterior distribution is:", mean, "\n")
-cat("The variance of the posterior distribution is:", var, "\n")
+cat("The mean of the posterior distribution is:", post_mean, "\n")
+cat("The variance of the posterior distribution is:", post_var, "\n")
 
 
 # 1.b Maximum a posteriori (MAP) estimate of lambda
@@ -40,18 +43,19 @@ ggplot(plot_data, aes(x = lambda, y = density)) +
        y = "Density") +
   theme_minimal() +
   theme(plot.title = element_text(face = "bold"))
+ggsave("ex1/posterior_MAPestimate_Poisson.png", width = 8, height = 6, dpi = 300)
 
-
-# 1.c Provide an adequate estimate of the uncertainty on λ
+# 1.c Provide an adequate estimate of the uncertainty on lambda
 # We check skewness and kurtosis of the posterior distribution to see if a gaussian approximation is reasonable
 skewness <- 2 / sqrt(alpha_post)
 kurtosis <- 6 / alpha_post
 cat("The skewness of the posterior distribution is:", skewness, "\n")
 cat("The kurtosis of the posterior distribution is:", kurtosis, "\n")
 
-# As skewness and kurtosis are close to 0, we can use a Gaussian approximation to estimate the uncertainty on λ
+# As skewness and kurtosis are close to 0, we can use a Gaussian approximation to estimate the uncertainty on lambda
+var_lambda <- (alpha_post - 1) / (beta_post^2)
 cat("The variance of the MAP estimate of lambda is:", var_lambda, "\n")
-cat("The MAP estimate of lambda with gaussian approximation is :", map_estimate, "±", sqrt(var_lambda), "\n")
+cat("The MAP estimate of lambda with gaussian approximation is:", map_estimate, "±", sqrt(var_lambda), "\n")
 
 
 # 2.a Posterior predictive distribution for a new observation
@@ -76,6 +80,7 @@ ggplot(plot_data, aes(x = x_new, y = probability)) +
        y = "Probability Mass") +
   theme_minimal() +
   theme(plot.title = element_text(face = "bold"))
+ggsave("ex1/posteriorPredictive_Poisson.png", width = 8, height = 6, dpi = 300)
 
 # 2.b Compute the probability that the next observation exceeds twice the empirical average
 threshold <- 2 * mean(data$data)
@@ -137,7 +142,7 @@ ggplot(grid, aes(x = r, y = pi, z = posterior)) +
   theme_minimal() +
   theme(plot.title = element_text(face = "bold"),
         legend.position = "right")
-
+ggsave("ex1/posterior_MAPestimate_NegativeBinomial.png", width = 8, height = 6, dpi = 300)
 
 # 3.2 Assuming gaussian shape, compute MAP estimates and uncertainties for the parameters
 # We use numerical optimization to find the MAP estimates and the Hessian to estimate the covariance matrix
@@ -165,3 +170,21 @@ cat("MAP Estimate for r:", map_r, "±", std_r, "\n")
 cat("MAP Estimate for pi:", map_pi, "±", std_pi, "\n")
 cat("\nCovariance Matrix:\n")
 print(cov_matrix)
+
+
+# 3.3 Evidence in Gaussian approximation
+
+log_evidence_nb <- -fit$value + log(2 * pi) + 0.5 * log(det(cov_matrix))
+cat("The log-evidence in Gaussian approximation is:", log_evidence_nb, "\n")
+# cat("The evidence in Gaussian approximation is:", exp(log_evidence), "\n") => underflow!
+
+
+# 3.4 Calculate the Bayes factor between the two models
+log_evidence_Poisson <- alpha_prior * log(beta_prior) + 
+                        lgamma(alpha_post) - 
+                        lgamma(alpha_prior) - 
+                        alpha_post * log(beta_post) - 
+                        sum(lfactorial(data$data))
+
+BF <- exp(log_evidence_nb - log_evidence_Poisson)
+cat("The Bayes factor in favor of the Negative Binomial model over the Poisson model is:", BF, "\n")
