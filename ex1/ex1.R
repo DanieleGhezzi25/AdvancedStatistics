@@ -18,16 +18,16 @@ post_mean <- alpha_post / beta_post # mean of the posterior distribution
 post_var <- alpha_post / (beta_post^2) # variance of the posterior distribution
 
 
-cat("The posterior distribution is Gamma with alpha =", alpha_post, "and beta =", beta_post, "\n")
-cat("The mean of the posterior distribution is:", post_mean, "\n")
-cat("The variance of the posterior distribution is:", post_var, "\n")
+cat(sprintf("The posterior distribution is Gamma with alpha = %.3f and beta = %.3f\n", alpha_post, beta_post))
+cat(sprintf("The mean of the posterior distribution is: %.3f\n", post_mean))
+cat(sprintf("The variance of the posterior distribution is: %.3f\n", post_var))
 
 
 # 1.b Maximum a posteriori (MAP) estimate of lambda
 # From analytical calculations, the MAP estimate of lambda can be calculated as follows:
 
 map_estimate <- (alpha_post - 1) / beta_post
-cat("The MAP estimate of lambda is:", map_estimate, "\n")
+cat(sprintf("The MAP estimate of lambda is: %.3f\n", map_estimate))
 
 # Plot of the posterior distribution and the MAP estimate
 x <- seq(0, 10, length.out = 1000)
@@ -38,7 +38,7 @@ ggplot(plot_data, aes(x = lambda, y = density)) +
   geom_line(color = "steelblue", linewidth = 1.2) +
   geom_vline(xintercept = map_estimate, color = "red", linetype = "dashed", linewidth = 0.5) +
   labs(title = "Posterior Distribution",
-       subtitle = paste("MAP Estimate of lambda =", round(map_estimate, 2)),
+       subtitle = paste("MAP Estimate of lambda =", round(map_estimate, 3)),
        x = expression(lambda), 
        y = "Density") +
   theme_minimal() +
@@ -49,18 +49,18 @@ ggsave("ex1/posterior_MAPestimate_Poisson.png", width = 8, height = 6, dpi = 300
 # We check skewness and kurtosis of the posterior distribution to see if a gaussian approximation is reasonable
 skewness <- 2 / sqrt(alpha_post)
 kurtosis <- 6 / alpha_post
-cat("The skewness of the posterior distribution is:", skewness, "\n")
-cat("The kurtosis of the posterior distribution is:", kurtosis, "\n")
+cat(sprintf("The skewness of the posterior distribution is: %.3f\n", skewness))
+cat(sprintf("The kurtosis of the posterior distribution is: %.3f\n", kurtosis))
 
 # As skewness and kurtosis are close to 0, we can use a Gaussian approximation to estimate the uncertainty on lambda
 var_lambda <- (alpha_post - 1) / (beta_post^2)
-cat("The variance of the MAP estimate of lambda is:", var_lambda, "\n")
-cat("The MAP estimate of lambda with gaussian approximation is:", map_estimate, "±", sqrt(var_lambda), "\n")
+cat(sprintf("The variance of the MAP estimate of lambda is: %.3f\n", var_lambda))
+cat(sprintf("The MAP estimate of lambda with gaussian approximation is: %.3f ± %.3f\n", map_estimate, sqrt(var_lambda)))
 
 
 # 2.a Posterior predictive distribution for a new observation
 # The posterior predictive distribution is a Negative Binomial pmf with parameters r = alpha_post and p = beta_post / (beta_post + 1)
-# where the k successes correspond to x_new
+# where the k failures correspond to x_new
 
 prob_param <- beta_post / (beta_post + 1)
 x_max <- qnbinom(0.999, size = alpha_post, prob = prob_param) # sensible maximum
@@ -85,7 +85,7 @@ ggsave("ex1/posteriorPredictive_Poisson.png", width = 8, height = 6, dpi = 300)
 # 2.b Compute the probability that the next observation exceeds twice the empirical average
 threshold <- 2 * mean(data$data)
 exceeds_prob <- 1 - pnbinom(q = threshold, size = alpha_post, prob = beta_post / (beta_post + 1))
-cat("The probability that the next observation exceeds twice the empirical average is:", exceeds_prob, "\n")
+cat(sprintf("The probability that the next observation exceeds twice the empirical average is: %.3f\n", exceeds_prob))
 
 
 # 3.a Consider an alternative model with a Negative Binomial distribution for the data, with parameters size r and prob pi
@@ -94,7 +94,7 @@ cat("The probability that the next observation exceeds twice the empirical avera
 # We assume a Gamma prior for the size parameter and a Beta prior for the prob parameter. The likelihood is given by the Negative Binomial distribution.
 # The posterior distribution can be calculated using Bayes' theorem, but it does not have a closed-form solution due to the complexity of the evidence integral.
 # However, we can still plot the unnormalized posterior to visualize the distribution of the parameters.
-# As probabilities could be infinitesimal, we will plot the log of the unnormalized posterior distribution.
+# As probabilities could be infinitesimal, we will evaluate the log of the unnormalized posterior distribution.
 
 # we define negative log-posterior function as later in point 3.b we will use it for optimization
 neg_log_post <- function(params, data) {
@@ -118,7 +118,7 @@ neg_log_post <- function(params, data) {
 sample_mean <- mean(data$data)
 sample_var <- var(data$data)
 
-# This estimated values help us to set a grid that is focused where the posterior is signifcant
+# This estimated values help us to set a grid that is focused where the posterior is significant
 pi_mom <- sample_mean / sample_var
 r_mom <- (sample_mean^2) / (sample_var - sample_mean)
 
@@ -147,7 +147,7 @@ ggsave("ex1/posterior_MAPestimate_NegativeBinomial.png", width = 8, height = 6, 
 # 3.2 Assuming gaussian shape, compute MAP estimates and uncertainties for the parameters
 # We use numerical optimization to find the MAP estimates and the Hessian to estimate the covariance matrix
 
-# We use "L-BFGS-B" method as we want boundaries: r > 0 and 0 < pi < 1
+# We use "L-BFGS-B" method as we want to enforce boundaries: r > 0 and 0 < pi < 1
 initial_params <- c(r_mom, pi_mom)
 fit <- optim(par = initial_params, 
              fn = neg_log_post, 
@@ -166,16 +166,15 @@ cov_matrix <- solve(fit$hessian)
 std_r <- sqrt(cov_matrix[1, 1])
 std_pi <- sqrt(cov_matrix[2, 2])
 
-cat("MAP Estimate for r:", map_r, "±", std_r, "\n")
-cat("MAP Estimate for pi:", map_pi, "±", std_pi, "\n")
+cat(sprintf("MAP Estimate for r: %.3f ± %.3f\n", map_r, std_r))
+cat(sprintf("MAP Estimate for pi: %.3f ± %.3f\n", map_pi, std_pi))
 cat("\nCovariance Matrix:\n")
-print(cov_matrix)
-
+cat(sprintf("%.3f %.3f\n%.3f %.3f\n", cov_matrix[1, 1], cov_matrix[1, 2], cov_matrix[2, 1], cov_matrix[2, 2]))
 
 # 3.3 Evidence in Gaussian approximation
 
 log_evidence_nb <- -fit$value + log(2 * pi) + 0.5 * log(det(cov_matrix))
-cat("The log-evidence in Gaussian approximation is:", log_evidence_nb, "\n")
+cat(sprintf("The log-evidence in Gaussian approximation is: %.3f\n", log_evidence_nb))
 # cat("The evidence in Gaussian approximation is:", exp(log_evidence), "\n") => underflow!
 
 
@@ -187,4 +186,11 @@ log_evidence_Poisson <- alpha_prior * log(beta_prior) +
                         sum(lfactorial(data$data))
 
 BF <- exp(log_evidence_nb - log_evidence_Poisson)
-cat("The Bayes factor in favor of the Negative Binomial model over the Poisson model is:", BF, "\n")
+cat(sprintf("The Bayes factor in favor of the Negative Binomial model over the Poisson model is: %.3e\n", BF))
+
+
+# 4. Which model is favored and to which degree? Is this unexpected?
+sample_mean <- mean(data$data)
+sample_var <- var(data$data)
+cat(sprintf("Sample mean: %.3f\n", sample_mean))
+cat(sprintf("Sample variance: %.3f\n", sample_var))
