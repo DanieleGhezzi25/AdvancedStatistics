@@ -6,6 +6,7 @@ set.seed(4) # for reproducibility
 # summary statistics
 summary(data$x)
 sprintf("Variance: %.2f", var(data$x))
+sprintf("N = %d", length(data$x))
 
 alpha_prior <- 1
 beta_prior <- 0.1
@@ -40,10 +41,10 @@ gibbs_sampling_posterior <- function(n_steps, data, alpha, beta, start = c(1, 1,
         logm <- numeric(length(Mset))
         
         for (i in 1:length(Mset)) {
-        m_cand <- Mset[i] 
-        sumM_cand <- sum(data$x[1:m_cand]) 
-        
-        logm[i] <- sumM_cand * log(lambda1[t]) - m_cand * lambda1[t] + (sumN - sumM_cand) * log(lambda2[t]) - (N - m_cand) * lambda2[t]
+          m_cand <- Mset[i] 
+          sumM_cand <- sum(data$x[1:m_cand]) 
+          
+          logm[i] <- sumM_cand * log(lambda1[t]) - m_cand * lambda1[t] + (sumN - sumM_cand) * log(lambda2[t]) - (N - m_cand) * lambda2[t]
         }
         
         weights <- exp(logm - max(logm))
@@ -58,7 +59,6 @@ gibbs_sampling_posterior <- function(n_steps, data, alpha, beta, start = c(1, 1,
 }
 
 # 2.b Run three chains starting from different values and show the trace plots 
-
 starts <- list(
   c(4, 5, 10), 
   c(6, 4, 20), 
@@ -100,14 +100,13 @@ for (p in 1:3) {
 }
 par(mfrow = c(1, 1))
 
+
 # 2.c burn-in period?
 burn_in <- 5000
 sample_gibbs <- vector("list", length(traces))
 for (i in 1:length(traces)) {
   sample_gibbs[[i]] <- traces[[i]][(burn_in + 1):n_steps, ]
 }
-
-# plot with and without burn-in ? i think it is not possible since we are in three dimensions? maybe scatterplot in 3d to see the burn-in
 
 # plot histogram of the samples
 lambda1_samples <- sample_gibbs[[1]][, "lambda1"]
@@ -154,9 +153,9 @@ tau_int_lambda2 <- calculate_tau_int(acf_lambda2)
 tau_int_m <- calculate_tau_int(acf_m)
 
 N_samples <- length(lambda1_samples)
-ess_lambda1 <- N_samples / (2*tau_int_lambda1)
-ess_lambda2 <- N_samples / (2*tau_int_lambda2)
-ess_m <- N_samples / (2*tau_int_m)
+ess_lambda1 <- N_samples / tau_int_lambda1
+ess_lambda2 <- N_samples / tau_int_lambda2
+ess_m <- N_samples / tau_int_m
 print(paste("ESS for lambda1:", round(ess_lambda1, 0)))
 print(paste("ESS for lambda2:", round(ess_lambda2, 0)))
 print(paste("ESS for m:", round(ess_m, 0)))
@@ -206,7 +205,6 @@ print(lambda2_summary)
 print("m Summary:")
 print(m_summary)
 
-# we are calculating central credible intervals, not HPD intervals
 # to get the MAP estimate, there are two options:
 # 1) we calculate the log-posterior for each sample and we take the one with the highest value;
 # 2) we use KDE to estimate the density and we find its maximum. 
@@ -280,12 +278,12 @@ print(paste("P(lambda2 > lambda1 | D) =", round(prob_lambda2_greater, 4)))
 
 
 # 3.b Estimate the posterior predictive mean
-n_predictive_samples <- 1000 * length(lambda1_samples)
-sample_predictive_distribution <- rpois(n = n_predictive_samples, lambda = lambda1_samples)
-print(paste("Posterior predictive mean:", round(mean(sample_predictive_distribution), 4)))
+print(paste("Posterior predictive mean:", round(mean(lambda2_samples), 2)))
 
 
 # 3.c Estimate the probability that the next count is greater than twice the mean of the observed counts
+n_predictive_samples <- 1 * length(lambda2_samples)
+sample_predictive_distribution <- rpois(n = n_predictive_samples, lambda = lambda2_samples)
 sample_mean <- mean(data$x)
 prob_twice_mean <- mean(sample_predictive_distribution > 2*sample_mean)
 print(paste("Probability that the next count is greater than twice the mean of the observed counts:", round(prob_twice_mean, 4)))
