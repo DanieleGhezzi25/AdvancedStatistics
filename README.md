@@ -1,5 +1,5 @@
 # Advanced Statistics for Physics Analysis
-This repository contains the final project and assignments for the **Advanced Statistics for Physics Analysis** course (Physics of Data, University of Padua). 
+This repository contains the final project and assignments for the **Advanced Statistics for Physics Analysis** course (Physics of Data, University of Padua). The course focused on Bayesian statistics and its practical implementation using R.
 
 ## Project
 This study investigates the atmospheric $CO_2$ concentration records from the Mauna Loa Observatory (1958–2025) to model the dynamics of carbon accumulation using **Bayesian regression**. By comparing linear (constant growth) and quadratic (accelerating growth) empirical models, we provide decisive statistical evidence favoring an accelerating trend in $CO_2$ accumulation. The model projects the underlying atmospheric $CO_2$ trend to reach approximately 453.0 ppm by 2035.
