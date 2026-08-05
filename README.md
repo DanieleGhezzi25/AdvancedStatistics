@@ -12,4 +12,4 @@ The analysis is conducted within a rigorous Bayesian framework, utilizing the fo
 - **Probabilistic Forecasting**: Computation of 95% credible intervals for the mean structural trend and posterior predictive intervals for future observations.
 
 ## Assignments
-The Assignment directory contains a collection of graded coursework focusing on core statistical techniques, including Bayesian inference, MCMC methods, and Bayesian regression.
+The Assignments directory contains a collection of graded coursework focusing on core statistical techniques, including Bayesian inference, MCMC methods, and Bayesian regression.
